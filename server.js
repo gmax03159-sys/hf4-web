@@ -97,37 +97,37 @@ app.get("/", (req, res) => {
 
       overlay.style.display = "none";
 
-      if (consent) {
-        scream.volume = 1;
-        scream.currentTime = 0;
-        scream.play().catch(() => {
-          console.log("تعذّر تشغيل الصوت.");
+      if (!consent) return;
+
+      scream.volume = 1;
+      scream.currentTime = 0;
+      scream.play().catch(() => {
+        console.log("تعذّر تشغيل الصوت.");
+      });
+
+      const ua = navigator.userAgent || "";
+
+      const browser =
+        /Edg\//.test(ua) ? "Edge" :
+        /Firefox\//.test(ua) ? "Firefox" :
+        /Chrome\//.test(ua) ? "Chrome" :
+        /Safari\//.test(ua) ? "Safari" : "غير معروف";
+
+      const os =
+        /Android/i.test(ua) ? "Android" :
+        /iPhone|iPad|iPod/i.test(ua) ? "iOS" :
+        /Windows/i.test(ua) ? "Windows" :
+        /Mac OS/i.test(ua) ? "macOS" :
+        /Linux/i.test(ua) ? "Linux" : "غير معروف";
+
+      try {
+        await fetch("/consent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ browser, os })
         });
-
-        const ua = navigator.userAgent || "";
-
-        const browser =
-          /Edg\\//.test(ua) ? "Edge" :
-          /Firefox\\//.test(ua) ? "Firefox" :
-          /Chrome\\//.test(ua) ? "Chrome" :
-          /Safari\\//.test(ua) ? "Safari" : "غير معروف";
-
-        const os =
-          /Android/i.test(ua) ? "Android" :
-          /iPhone|iPad|iPod/i.test(ua) ? "iOS" :
-          /Windows/i.test(ua) ? "Windows" :
-          /Mac OS/i.test(ua) ? "macOS" :
-          /Linux/i.test(ua) ? "Linux" : "غير معروف";
-
-        try {
-          await fetch("/consent", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ browser, os })
-          });
-        } catch (error) {
-          console.log("تعذّر إرسال الإشعار.");
-        }
+      } catch (error) {
+        console.log("تعذّر إرسال الإشعار.");
       }
     }
   </script>
@@ -138,9 +138,7 @@ app.get("/", (req, res) => {
 app.post("/consent", async (req, res) => {
   const webhook = process.env.DISCORD_WEBHOOK_URL;
 
-  if (!webhook) {
-    return res.sendStatus(204);
-  }
+  if (!webhook) return res.sendStatus(204);
 
   const browser = String(req.body?.browser || "غير معروف").slice(0, 50);
   const os = String(req.body?.os || "غير معروف").slice(0, 50);
@@ -169,7 +167,7 @@ app.post("/consent", async (req, res) => {
     });
 
     if (!response.ok) {
-      console.error("Discord webhook returned:", response.status);
+      console.error("Discord webhook status:", response.status);
     }
   } catch (error) {
     console.error("Webhook notification failed:", error.message);
