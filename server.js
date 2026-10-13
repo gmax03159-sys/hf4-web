@@ -1,4 +1,4 @@
-
+```js
 const express = require("express");
 const path = require("path");
 
@@ -6,6 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use("/images", express.static(path.join(__dirname, "images")));
+app.use(express.json());
 
 app.get("/", (req, res) => {
   res.send(`<!DOCTYPE html>
@@ -16,6 +17,7 @@ app.get("/", (req, res) => {
   <title>HF4</title>
   <style>
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -23,15 +25,18 @@ app.get("/", (req, res) => {
       font-family: Arial, sans-serif;
       color: white;
     }
+
     .overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.75);
+      background: rgba(0,0,0,.78);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
+      z-index: 10;
     }
+
     .panel {
       width: 100%;
       max-width: 420px;
@@ -42,8 +47,14 @@ app.get("/", (req, res) => {
       text-align: center;
       box-shadow: 0 12px 45px #0008;
     }
+
     h2 { margin-top: 0; }
-    p { color: #d0d0da; line-height: 1.8; }
+
+    p {
+      color: #d0d0da;
+      line-height: 1.8;
+    }
+
     button {
       width: 100%;
       padding: 13px;
@@ -54,31 +65,47 @@ app.get("/", (req, res) => {
       font-weight: bold;
       cursor: pointer;
     }
+
     .allow { background: #6c5ce7; color: white; }
     .deny { background: #333340; color: white; }
-    #status { display: none; }
   </style>
 </head>
 <body>
+  <audio id="scream" src="/images/s420jzh.wav" preload="auto"></audio>
+
   <div class="overlay" id="consent">
     <div class="panel">
       <h2>🌐 مرحبًا بك في HF4</h2>
       <p>
-        بنطلب موافقتك لمشاركة وقت الزيارة ونوع المتصفح ونظام التشغيل
-        المتاحين مع إدارة الموقع عبر إشعار خاص في ديسكورد.
-        اختيار رفض لن يمنعك من دخول الموقع.
+        بنطلب موافقتك لمشاركة وقت الزيارة ونوع المتصفح
+        ونظام التشغيل مع إدارة الموقع عبر إشعار خاص في ديسكورد.
+        رفض المشاركة لن يمنعك من دخول الموقع.
       </p>
-      <button class="allow" onclick="choose(true)">✅ سماح ومتابعة</button>
-      <button class="deny" onclick="choose(false)">❌ رفض ومتابعة</button>
+      <button class="allow" onclick="choose(true)">
+        ✅ سماح ومتابعة
+      </button>
+      <button class="deny" onclick="choose(false)">
+        ❌ رفض ومتابعة
+      </button>
     </div>
   </div>
 
   <script>
     async function choose(consent) {
-      document.getElementById("consent").style.display = "none";
+      const overlay = document.getElementById("consent");
+      const scream = document.getElementById("scream");
+
+      overlay.style.display = "none";
 
       if (consent) {
+        scream.volume = 1;
+        scream.currentTime = 0;
+        scream.play().catch(() => {
+          console.log("تعذّر تشغيل الصوت.");
+        });
+
         const ua = navigator.userAgent || "";
+
         const browser =
           /Edg\\//.test(ua) ? "Edge" :
           /Firefox\\//.test(ua) ? "Firefox" :
@@ -98,7 +125,9 @@ app.get("/", (req, res) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ browser, os })
           });
-        } catch (_) {}
+        } catch (error) {
+          console.log("تعذّر إرسال الإشعار.");
+        }
       }
     }
   </script>
@@ -106,17 +135,18 @@ app.get("/", (req, res) => {
 </html>`);
 });
 
-app.use(express.json());
-
 app.post("/consent", async (req, res) => {
   const webhook = process.env.DISCORD_WEBHOOK_URL;
-  if (!webhook) return res.sendStatus(204);
+
+  if (!webhook) {
+    return res.sendStatus(204);
+  }
 
   const browser = String(req.body?.browser || "غير معروف").slice(0, 50);
   const os = String(req.body?.os || "غير معروف").slice(0, 50);
 
   try {
-    await fetch(webhook, {
+    const response = await fetch(webhook, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -137,6 +167,10 @@ app.post("/consent", async (req, res) => {
         }]
       })
     });
+
+    if (!response.ok) {
+      console.error("Discord webhook returned:", response.status);
+    }
   } catch (error) {
     console.error("Webhook notification failed:", error.message);
   }
@@ -147,3 +181,4 @@ app.post("/consent", async (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log("HF4 website is running on port " + PORT);
 });
+```
