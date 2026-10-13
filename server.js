@@ -26,7 +26,6 @@ app.get("/", (req, res) => {
     'button{width:100%;padding:14px;margin-top:12px;border:0;border-radius:9px;font-size:16px;font-weight:bold;cursor:pointer}',
     '.allow{background:#6c5ce7;color:white}',
     '.deny{background:#333340;color:white}',
-    'button:disabled{opacity:.6;cursor:wait}',
     '</style>',
     '</head>',
     '<body>',
@@ -34,15 +33,13 @@ app.get("/", (req, res) => {
     '<div class="overlay" id="consent">',
     '<div class="panel">',
     '<h2>🌐 مرحبًا بك في HF4</h2>',
-    '<p>بنطلب موافقتك لمشاركة نوع المتصفح ونظام التشغيل ووقت الموافقة مع إدارة الموقع عبر إشعار خاص في ديسكورد. رفض المشاركة لن يمنعك من دخول الموقع.</p>',
+    '<p>بنطلب موافقتك لمشاركة وقت الزيارة ونوع المتصفح ونظام التشغيل مع إدارة الموقع عبر إشعار خاص في ديسكورد. عنوان IP قد تتم معالجته تقنيًا عند الاتصال بالموقع. رفض المشاركة لن يمنعك من دخول الموقع.</p>',
     '<button class="allow" id="allow">✅ سماح ومتابعة</button>',
     '<button class="deny" id="deny">❌ رفض ومتابعة</button>',
     '</div>',
     '</div>',
     '<script>',
     'const overlay=document.getElementById("consent");',
-    'const allowButton=document.getElementById("allow");',
-    'const denyButton=document.getElementById("deny");',
     'async function choose(consent){',
     'if(!overlay||overlay.style.display==="none")return;',
     'overlay.style.display="none";',
@@ -55,8 +52,8 @@ app.get("/", (req, res) => {
     'const os=/Android/i.test(ua)?"Android":/iPhone|iPad|iPod/i.test(ua)?"iOS":/Windows/i.test(ua)?"Windows":/Mac OS/i.test(ua)?"macOS":/Linux/i.test(ua)?"Linux":"Unknown";',
     'try{await fetch("/consent",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({browser,os})});}catch(error){console.log("Notification could not be sent.");}',
     '}',
-    'allowButton.addEventListener("click",()=>choose(true));',
-    'denyButton.addEventListener("click",()=>choose(false));',
+    'document.getElementById("allow").addEventListener("click",()=>choose(true));',
+    'document.getElementById("deny").addEventListener("click",()=>choose(false));',
     '</script>',
     '</body>',
     '</html>'
@@ -68,9 +65,7 @@ app.get("/", (req, res) => {
 app.post("/consent", async (req, res) => {
   const webhook = process.env.DISCORD_WEBHOOK_URL;
 
-  if (!webhook) {
-    return res.sendStatus(204);
-  }
+  if (!webhook) return res.sendStatus(204);
 
   const browser = String(req.body?.browser || "Unknown").slice(0, 50);
   const os = String(req.body?.os || "Unknown").slice(0, 50);
