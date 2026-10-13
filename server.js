@@ -1,4 +1,4 @@
-
+```js
 const express = require("express");
 const path = require("path");
 
@@ -35,7 +35,7 @@ app.get("/", (req, res) => {
 
         body {
           min-height: 100vh;
-          background-image: url("/images/logo.png");
+          background-image: url("/images/noFilter.webp");
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
@@ -54,3 +54,4 @@ app.get("/", (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log("HF4 website is running on port " + PORT);
 });
+```
